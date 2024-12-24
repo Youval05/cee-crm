@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          Role      @default(TECHNICIAN)
+  clientId      String?
+  client        Client?   @relation(fields: [clientId], references: [id])
+  visits        Visit[]   @relation("TechnicianVisits")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Client {
+  id            String    @id @default(uuid())
+  name          String
+  address       String
+  phone         String
+  email         String    @unique
+  users         User[]
+  visits        Visit[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("clients")
+}
+
+model Visit {
+  id            String    @id @default(uuid())
+  date          DateTime
+  status        VisitStatus @default(SCHEDULED)
+  address       String
+  notes         String?
+  isEligible    Boolean?
+  technicianId  String
+  clientId      String
+  technician    User      @relation("TechnicianVisits", fields: [technicianId], references: [id])
+  client        Client    @relation(fields: [clientId], references: [id])
+  report        Report?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("visits")
+}
+
+model Report {
+  id            String    @id @default(uuid())
+  content       String
+  pdfUrl        String?
+  visitId       String    @unique
+  visit         Visit     @relation(fields: [visitId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("reports")
+}
+
+enum Role {
+  ADMIN
+  CLIENT_ADMIN
+  TECHNICIAN
+}
+
+enum VisitStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
